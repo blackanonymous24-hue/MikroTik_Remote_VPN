@@ -121,6 +121,46 @@ export async function syncTenantVpns(
   };
 }
 
+/**
+ * Prépare un routeur pour l'installation MikroTik : sync métadonnées + provision sur le VPS.
+ * Appelé automatiquement avant « Installer ».
+ */
+export async function ensureDeviceVpnReady(tenantId: string, deviceId: string) {
+  const { provisionDevice } = await import("@/lib/provisioning/provision-service");
+  const { server, serverPublicKey } = await syncVpnServerFromEnvironment();
+
+  const device = await prisma.device.findFirst({
+    where: { id: deviceId, tenantId },
+    include: { vpnAccount: true, wireguardPeer: true },
+  });
+
+  if (!device) throw new Error("DEVICE_NOT_FOUND");
+
+  await syncDeviceVpnMetadata(device, server.id);
+
+  const needsProvision = ["PENDING", "FAILED", "ACTIVE"].includes(device.provisionStatus);
+
+  let provisionResult: { success: boolean; message: string } | null = null;
+  if (needsProvision) {
+    provisionResult = await provisionDevice(deviceId, tenantId);
+  }
+
+  const refreshed = await prisma.device.findFirst({
+    where: { id: deviceId, tenantId },
+    select: {
+      id: true,
+      provisionStatus: true,
+      provisionError: true,
+    },
+  });
+
+  return {
+    device: refreshed,
+    serverPublicKey: serverPublicKey ?? "",
+    provisionResult,
+  };
+}
+
 /** Un seul device : métadonnées + re-provisionnement. */
 export async function syncDeviceVpn(tenantId: string, deviceId: string) {
   const { provisionDevice } = await import("@/lib/provisioning/provision-service");

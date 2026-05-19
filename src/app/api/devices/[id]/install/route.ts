@@ -1,8 +1,11 @@
 import { NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
 import { APP_URL } from "@/lib/config";
-import { prisma } from "@/lib/prisma";
-import { buildMikrotikFetchCommand, ensureDeviceInstallToken } from "@/lib/mikrotik-install-bundle";
+import {
+  buildMikrotikFetchCommand,
+  ensureDeviceInstallToken,
+} from "@/lib/mikrotik-install-bundle";
+import { ensureDeviceVpnReady } from "@/lib/vpn-sync";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -14,23 +17,39 @@ export async function GET(_request: Request, { params }: Params) {
 
   const { id } = await params;
 
-  const device = await prisma.device.findFirst({
-    where: { id, tenantId: session.tenantId },
-    select: { id: true, provisionStatus: true },
-  });
+  try {
+    const { device, provisionResult } = await ensureDeviceVpnReady(session.tenantId, id);
 
-  if (!device) {
-    return NextResponse.json({ error: "Routeur introuvable" }, { status: 404 });
+    if (!device) {
+      return NextResponse.json({ error: "Routeur introuvable" }, { status: 404 });
+    }
+
+    if (provisionResult && !provisionResult.success) {
+      return NextResponse.json(
+        {
+          error: provisionResult.message,
+          provisionStatus: device.provisionStatus,
+        },
+        { status: 422 }
+      );
+    }
+
+    const token = await ensureDeviceInstallToken(id);
+    const base = APP_URL.replace(/\/$/, "");
+    const installUrl = `${base}/v/in/${token}`;
+    const fetchScript = buildMikrotikFetchCommand(installUrl, base.startsWith("https"));
+
+    return NextResponse.json({
+      installUrl,
+      fetchScript,
+      provisionStatus: device.provisionStatus,
+      autoSynced: true,
+    });
+  } catch (err) {
+    if (err instanceof Error && err.message === "DEVICE_NOT_FOUND") {
+      return NextResponse.json({ error: "Routeur introuvable" }, { status: 404 });
+    }
+    const message = err instanceof Error ? err.message : "Erreur préparation installation";
+    return NextResponse.json({ error: message }, { status: 500 });
   }
-
-  const token = await ensureDeviceInstallToken(id);
-  const base = APP_URL.replace(/\/$/, "");
-  const installUrl = `${base}/v/in/${token}`;
-  const fetchScript = buildMikrotikFetchCommand(installUrl, base.startsWith("https"));
-
-  return NextResponse.json({
-    installUrl,
-    fetchScript,
-    provisionStatus: device.provisionStatus,
-  });
 }

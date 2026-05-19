@@ -41,9 +41,11 @@ export function MikrotikInstallerDialog({
         if (!res.ok) throw new Error(data.error ?? "Erreur");
         if (cancelled) return;
         setFetchScript(data.fetchScript ?? "");
-        if (data.provisionStatus !== "ACTIVE") {
+        if (data.error) {
+          setError(data.error);
+        } else if (data.provisionStatus !== "ACTIVE") {
           setError(
-            "Provisionnez d'abord le routeur (bouton Provisionner dans Devices, ou Synchroniser VPN en haut de page)."
+            "Provisionnement serveur en cours ou en échec — vérifiez Devices puis réessayez Installer."
           );
         }
       })
