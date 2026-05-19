@@ -92,6 +92,7 @@ SEED_ADMIN_EMAIL=${ADMIN_EMAIL}
 SEED_ADMIN_PASSWORD=${ADMIN_PASS}
 SEED_DEMO_DEVICES=0
 EOF
+chown -R nanotech:nanotech "$APP_DIR" 2>/dev/null || chown -R root:root "$APP_DIR"
 chmod 600 "$APP_DIR/.env"
 
 echo ""

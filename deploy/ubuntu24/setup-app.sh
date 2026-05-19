@@ -42,7 +42,7 @@ if [[ ! -f .env ]]; then
   exit 1
 fi
 
-chown "$APP_USER:$APP_USER" .env
+chown -R "$APP_USER:$APP_USER" "$APP_DIR"
 chmod 600 .env
 
 echo "==> Build"
