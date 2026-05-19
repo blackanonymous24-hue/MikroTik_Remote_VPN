@@ -1,0 +1,162 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum DeviceProtocol {
+  L2TP
+  SSTP
+  OVPN
+  WIREGUARD
+}
+
+enum DeviceStatus {
+  ONLINE
+  OFFLINE
+  PENDING
+}
+
+enum ProvisionStatus {
+  PENDING
+  PROVISIONING
+  ACTIVE
+  FAILED
+  DEPROVISIONING
+  DEPROVISIONED
+}
+
+model Tenant {
+  id        String   @id @default(cuid())
+  name      String
+  slug      String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  users      User[]
+  devices    Device[]
+  vpnServers VpnServer[]
+}
+
+model User {
+  id           String   @id @default(cuid())
+  tenantId     String
+  email        String   @unique
+  passwordHash String
+  name         String?
+  role         String   @default("admin")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+}
+
+model Plan {
+  id          String   @id @default(cuid())
+  name        String
+  slug        String   @unique
+  maxDevices  Int      @default(5)
+  priceMonthly Float   @default(0)
+  description String?
+  createdAt   DateTime @default(now())
+
+  devices Device[]
+}
+
+model VpnServer {
+  id           String   @id @default(cuid())
+  tenantId     String?
+  name         String
+  host         String   @default("vpn.nanotechvpn.com")
+  wgPort       Int      @default(51820)
+  sshHost      String?
+  sshPort      Int      @default(22)
+  sshUser      String?  @default("root")
+  provisionPath String? @default("/opt/nanotech-vpn")
+  isDefault    Boolean  @default(false)
+  createdAt    DateTime @default(now())
+
+  tenant  Tenant?  @relation(fields: [tenantId], references: [id], onDelete: SetNull)
+  devices Device[]
+
+  @@index([tenantId])
+}
+
+model Device {
+  id              String          @id @default(cuid())
+  tenantId        String
+  planId          String?
+  vpnServerId     String?
+  name            String
+  protocol        DeviceProtocol
+  vpnIp           String?
+  status          DeviceStatus    @default(PENDING)
+  provisionStatus ProvisionStatus @default(PENDING)
+  provisionedAt   DateTime?
+  provisionError  String?
+  latencyMs       Int?
+  vpnEnabled      Boolean         @default(true)
+  expiresAt       DateTime?
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  tenant          Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  plan            Plan?            @relation(fields: [planId], references: [id], onDelete: SetNull)
+  vpnServer       VpnServer?       @relation(fields: [vpnServerId], references: [id], onDelete: SetNull)
+  vpnAccount      VpnAccount?
+  wireguardPeer   WireguardPeer?
+  provisionLogs   ProvisionLog[]
+
+  @@index([tenantId])
+  @@index([protocol])
+  @@index([provisionStatus])
+}
+
+model ProvisionLog {
+  id        String   @id @default(cuid())
+  deviceId  String
+  action    String
+  status    String
+  message   String?
+  payload   Json?
+  createdAt DateTime @default(now())
+
+  device Device @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+
+  @@index([deviceId])
+}
+
+model VpnAccount {
+  id         String @id @default(cuid())
+  deviceId   String @unique
+  username   String
+  password   String
+  host       String @default("vpn.nanotechvpn.com")
+  ipsecSecret String?
+  winboxPort Int    @default(62336)
+  webfigPort Int    @default(62337)
+  apiPort    Int    @default(62338)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  device Device @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+}
+
+model WireguardPeer {
+  id         String @id @default(cuid())
+  deviceId   String @unique
+  publicKey  String
+  privateKey String
+  vpnIp      String
+  endpoint   String @default("vpn.nanotechvpn.com:51820")
+  lastSeenAt DateTime?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  device Device @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+}
