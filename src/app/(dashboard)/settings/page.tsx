@@ -71,7 +71,7 @@ export default async function SettingsPage() {
         <VpnDiagnosticsCard />
         <Card>
           <CardHeader>
-            <CardTitle>Synchronisation VPN</CardTitle>
+            <CardTitle>Synchroniser VPN (tous les routeurs)</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
             <p className="text-xs text-muted-foreground">

@@ -43,7 +43,7 @@ export function MikrotikInstallerDialog({
         setFetchScript(data.fetchScript ?? "");
         if (data.provisionStatus !== "ACTIVE") {
           setError(
-            "Provisionnez d'abord le routeur sur le serveur (Provisionner ou Settings → Synchroniser)."
+            "Provisionnez d'abord le routeur (bouton Provisionner dans Devices, ou Synchroniser VPN en haut de page)."
           );
         }
       })

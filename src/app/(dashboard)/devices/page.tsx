@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { PageHeader } from "@/components/layout/page-header";
 import { AddDeviceDialog } from "@/components/devices/add-device-dialog";
 import { DevicesClient } from "@/components/devices/devices-client";
+import { SyncVpnButton } from "@/components/settings/sync-vpn-button";
 
 export default async function DevicesPage() {
   const session = await getSession();
@@ -30,7 +31,12 @@ export default async function DevicesPage() {
       <PageHeader
         title="Devices"
         description="Tous vos routeurs MikroTik"
-        action={<AddDeviceDialog plans={plans.map((p) => ({ id: p.id, name: p.name }))} />}
+        action={
+          <div className="flex flex-wrap items-center gap-2">
+            <SyncVpnButton compact />
+            <AddDeviceDialog plans={plans.map((p) => ({ id: p.id, name: p.name }))} />
+          </div>
+        }
       />
       <DevicesClient devices={serialized} />
     </>

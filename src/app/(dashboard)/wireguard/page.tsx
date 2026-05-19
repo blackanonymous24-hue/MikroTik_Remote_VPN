@@ -2,6 +2,7 @@ import { getSession } from "@/lib/auth";
 import { listWireGuardDevices } from "@/lib/device-service";
 import { PageHeader } from "@/components/layout/page-header";
 import { WireGuardClient } from "@/components/wireguard/wireguard-client";
+import { SyncVpnButton } from "@/components/settings/sync-vpn-button";
 
 export default async function WireGuardPage() {
   const session = await getSession();
@@ -27,6 +28,7 @@ export default async function WireGuardPage() {
       <PageHeader
         title="WireGuard"
         description="Peers WireGuard — accès unifié via IP VPN"
+        action={<SyncVpnButton compact />}
       />
       <WireGuardClient devices={serialized} />
     </>

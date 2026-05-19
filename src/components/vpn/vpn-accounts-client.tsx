@@ -17,6 +17,7 @@ import {
 } from "@/components/vpn/mikroot-buttons";
 import { OnlineOfflineBand } from "@/components/vpn/online-offline-band";
 import { VpnRouterDetailPanel } from "@/components/vpn/vpn-router-detail-panel";
+import { SyncVpnButton } from "@/components/settings/sync-vpn-button";
 import { useDevicePing } from "@/hooks/use-device-ping";
 import { formatDateExp } from "@/lib/utils";
 import type { DeviceStatus } from "@prisma/client";
@@ -139,6 +140,7 @@ export function VpnAccountsClient({ devices }: { devices: ClassicVpnDevice[] }) 
       <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <h2 className="text-sm font-semibold text-foreground">Routeurs Mikrotik</h2>
         <div className="flex flex-wrap items-center gap-2">
+          <SyncVpnButton compact />
           <div className="relative">
             <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
             <input
