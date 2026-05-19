@@ -3,7 +3,7 @@ import type { NextRequest } from "next/server";
 import { jwtVerify } from "jose";
 
 const COOKIE_NAME = "mikrotik_session";
-const publicPaths = ["/login", "/api/auth/login", "/api/health"];
+const publicPaths = ["/login", "/api/auth/login", "/api/health", "/v/in"];
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;

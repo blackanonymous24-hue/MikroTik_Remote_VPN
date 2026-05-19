@@ -17,6 +17,8 @@ export type VpnDiagnostics = {
   wgInterfaceUp: boolean;
   wgServerPublicKey: string;
   wgPeerCount: number | null;
+  openvpnActive: boolean;
+  sstpActive: boolean;
   issues: string[];
 };
 
@@ -64,6 +66,33 @@ export async function runVpnDiagnostics(): Promise<VpnDiagnostics> {
     issues.push("PROVISION_MODE=mock : aucun VPN réel sur le serveur");
   }
 
+  let openvpnActive = false;
+  try {
+    await execFileAsync("systemctl", ["is-active", "--quiet", "openvpn-server@nanotech"], {
+      timeout: 3_000,
+    });
+    openvpnActive = true;
+  } catch {
+    try {
+      await execFileAsync("systemctl", ["is-active", "--quiet", "openvpn@nanotech"], {
+        timeout: 3_000,
+      });
+      openvpnActive = true;
+    } catch {
+      issues.push("Service OpenVPN (openvpn-server@nanotech) inactif — OVPN ne fonctionnera pas");
+    }
+  }
+
+  let sstpActive = false;
+  try {
+    await execFileAsync("systemctl", ["is-active", "--quiet", "accel-ppp"], { timeout: 3_000 });
+    sstpActive = true;
+  } catch {
+    issues.push(
+      "Service SSTP (accel-ppp) inactif — lancez deploy/ubuntu24/install-accel-ppp.sh puis setup-vpn-server.sh"
+    );
+  }
+
   return {
     provisionMode: getProvisionMode(),
     provisionPath,
@@ -72,6 +101,8 @@ export async function runVpnDiagnostics(): Promise<VpnDiagnostics> {
     wgInterfaceUp,
     wgServerPublicKey,
     wgPeerCount,
+    openvpnActive,
+    sstpActive,
     issues,
   };
 }

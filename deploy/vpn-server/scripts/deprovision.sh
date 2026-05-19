@@ -6,12 +6,21 @@ parse_args "$@"
 
 [[ -n "$DEVICE_ID" ]] || log_err "device-id requis"
 
+USERNAME_FROM_LINE=""
 if [[ -f "$CLASSIC_USERS" ]]; then
+  LINE=$(grep "^${DEVICE_ID}|" "$CLASSIC_USERS" 2>/dev/null | head -1)
+  if [[ -n "$LINE" ]]; then
+    USERNAME_FROM_LINE=$(echo "$LINE" | cut -d'|' -f3)
+  fi
   sed -i "/^${DEVICE_ID}|/d" "$CLASSIC_USERS"
 fi
 
-if [[ -n "$USERNAME" ]] && [[ -f /etc/ppp/chap-secrets ]]; then
-  sed -i "/^${USERNAME} /d" /etc/ppp/chap-secrets
+if [[ -n "${USERNAME:-}" ]]; then
+  USERNAME_FROM_LINE="$USERNAME"
+fi
+
+if [[ -n "$USERNAME_FROM_LINE" ]]; then
+  rm -f "/etc/openvpn/ccd/${USERNAME_FROM_LINE}" 2>/dev/null || true
 fi
 
 if [[ -f "$WG_PEERS" ]]; then
@@ -41,5 +50,7 @@ if [[ -f "$PORT_FORWARDS" ]]; then
   fi
   sed -i "/^${DEVICE_ID}|/d" "$PORT_FORWARDS"
 fi
+
+"$(dirname "$0")/sync-classic-auth.sh"
 
 log_ok "Device ${DEVICE_ID} déprovisionné"

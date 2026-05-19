@@ -102,6 +102,7 @@ model Device {
   provisionError  String?
   latencyMs       Int?
   vpnEnabled      Boolean         @default(true)
+  installToken    String?         @unique
   expiresAt       DateTime?
   createdAt       DateTime        @default(now())
   updatedAt       DateTime        @updatedAt

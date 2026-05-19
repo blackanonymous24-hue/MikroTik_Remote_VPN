@@ -12,6 +12,8 @@ type Diagnostics = {
   wgInterfaceUp: boolean;
   wgServerPublicKey: string;
   wgPeerCount: number | null;
+  openvpnActive: boolean;
+  sstpActive: boolean;
   issues: string[];
 };
 
@@ -52,6 +54,8 @@ export function VpnDiagnosticsCard() {
             <p>Scripts : {data.scriptsInstalled ? "OK" : "manquants"}</p>
             <p>Sudo (provision) : {data.sudoWorks ? "OK" : "échec"}</p>
             <p>WireGuard wg0 : {data.wgInterfaceUp ? "actif" : "inactif"}</p>
+            <p>OpenVPN (OVPN) : {data.openvpnActive ? "actif" : "inactif"}</p>
+            <p>SSTP (accel-ppp) : {data.sstpActive ? "actif" : "inactif"}</p>
             <p>Peers WG : {data.wgPeerCount ?? "—"}</p>
             {data.issues.length > 0 && (
               <ul className="list-disc space-y-1 pl-4 text-destructive">

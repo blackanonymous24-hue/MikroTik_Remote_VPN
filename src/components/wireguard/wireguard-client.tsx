@@ -14,10 +14,9 @@ import {
 } from "@/components/ui/table";
 import { DataPanel } from "@/components/shared/data-panel";
 import { StatusBadge } from "@/components/shared/status-badge";
-import { ScriptDialog } from "@/components/shared/script-dialog";
+import { MikrotikInstallerDialog } from "@/components/shared/mikrotik-installer-dialog";
 import { WgDetailDialog } from "@/components/wireguard/wg-detail-dialog";
 import { useDevicePing } from "@/hooks/use-device-ping";
-import { generateWireGuardScript } from "@/lib/mikrotik-scripts";
 import { formatWireGuardIpv4 } from "@/lib/wireguard-ip";
 import { formatDateTime } from "@/lib/utils";
 import type { DeviceStatus } from "@prisma/client";
@@ -38,15 +37,13 @@ export type WireGuardDevice = {
 
 export function WireGuardClient({
   devices,
-  serverPublicKey,
 }: {
   devices: WireGuardDevice[];
-  serverPublicKey: string;
 }) {
   const { ping, pingingId, latencies } = useDevicePing();
-  const [scriptOpen, setScriptOpen] = useState(false);
+  const [installOpen, setInstallOpen] = useState(false);
+  const [installDeviceId, setInstallDeviceId] = useState<string | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
-  const [script, setScript] = useState("");
   const [selected, setSelected] = useState<WireGuardDevice | null>(null);
 
   async function handleSync(deviceId: string) {
@@ -63,22 +60,8 @@ export function WireGuardClient({
 
   function openInstall(device: WireGuardDevice) {
     if (!device.wireguardPeer) return;
-    const peer = device.wireguardPeer;
-    if (!serverPublicKey) {
-      setScript(
-        "# Clé publique serveur manquante sur la plateforme.\n# Sur le VPS : wg show wg0 public-key\n# Puis ajoutez WG_SERVER_PUBLIC_KEY dans /var/www/nanotech-vpn/.env et redémarrez l'app."
-      );
-    } else {
-      setScript(
-        generateWireGuardScript({
-          privateKey: peer.privateKey,
-          serverPublicKey,
-          vpnIp: peer.vpnIp,
-          endpoint: peer.endpoint,
-        })
-      );
-    }
-    setScriptOpen(true);
+    setInstallDeviceId(device.id);
+    setInstallOpen(true);
   }
 
   function getLatency(device: WireGuardDevice) {
@@ -183,12 +166,11 @@ export function WireGuardClient({
         </Table>
       </DataPanel>
 
-      <ScriptDialog
-        open={scriptOpen}
-        onOpenChange={setScriptOpen}
+      <MikrotikInstallerDialog
+        open={installOpen}
+        onOpenChange={setInstallOpen}
+        deviceId={installDeviceId}
         title="Installer WireGuard"
-        description="Script MikroTik RouterOS"
-        script={script}
       />
 
       {selected?.wireguardPeer && (

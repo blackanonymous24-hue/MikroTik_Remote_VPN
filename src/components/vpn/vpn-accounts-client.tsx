@@ -8,7 +8,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/shared/confirm-dialog";
 import { DataPanel } from "@/components/shared/data-panel";
-import { ScriptDialog } from "@/components/shared/script-dialog";
+import { MikrotikInstallerDialog } from "@/components/shared/mikrotik-installer-dialog";
 import {
   DetailButton,
   InstallerButton,
@@ -18,7 +18,6 @@ import {
 import { OnlineOfflineBand } from "@/components/vpn/online-offline-band";
 import { VpnRouterDetailPanel } from "@/components/vpn/vpn-router-detail-panel";
 import { useDevicePing } from "@/hooks/use-device-ping";
-import { generateClassicVpnScript } from "@/lib/mikrotik-scripts";
 import { formatDateExp } from "@/lib/utils";
 import type { DeviceStatus } from "@prisma/client";
 
@@ -48,9 +47,9 @@ export function VpnAccountsClient({ devices }: { devices: ClassicVpnDevice[] }) 
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<ClassicVpnDevice | null>(null);
   const [deleting, setDeleting] = useState(false);
-  const [scriptOpen, setScriptOpen] = useState(false);
-  const [script, setScript] = useState("");
-  const [scriptTitle, setScriptTitle] = useState("");
+  const [installOpen, setInstallOpen] = useState(false);
+  const [installDeviceId, setInstallDeviceId] = useState<string | null>(null);
+  const [installTitle, setInstallTitle] = useState("");
   const [search, setSearch] = useState("");
   const [protocolFilter, setProtocolFilter] = useState<string>("all");
   const [vpnEnabledOverrides, setVpnEnabledOverrides] = useState<Record<string, boolean>>({});
@@ -70,18 +69,9 @@ export function VpnAccountsClient({ devices }: { devices: ClassicVpnDevice[] }) 
   }
 
   function openInstall(device: ClassicVpnDevice) {
-    if (!device.vpnAccount) return;
-    setScript(
-      generateClassicVpnScript({
-        protocol: device.protocol,
-        host: device.vpnAccount.host,
-        username: device.vpnAccount.username,
-        password: device.vpnAccount.password,
-        ipsecSecret: device.vpnAccount.ipsecSecret,
-      })
-    );
-    setScriptTitle(`Installer ${device.protocol} — ${device.name}`);
-    setScriptOpen(true);
+    setInstallDeviceId(device.id);
+    setInstallTitle(`Installer ${device.protocol} — ${device.name}`);
+    setInstallOpen(true);
   }
 
   function getLatency(device: ClassicVpnDevice) {
@@ -262,12 +252,11 @@ export function VpnAccountsClient({ devices }: { devices: ClassicVpnDevice[] }) 
         )}
       </DataPanel>
 
-      <ScriptDialog
-        open={scriptOpen}
-        onOpenChange={setScriptOpen}
-        title={scriptTitle}
-        description="Collez dans le terminal MikroTik"
-        script={script}
+      <MikrotikInstallerDialog
+        open={installOpen}
+        onOpenChange={setInstallOpen}
+        deviceId={installDeviceId}
+        title={installTitle}
       />
 
       <ConfirmDialog

@@ -83,6 +83,7 @@ export async function createDevice(input: {
   const count = await prisma.device.count({ where: { tenantId: input.tenantId } });
   const expiresAt = new Date();
   expiresAt.setMonth(expiresAt.getMonth() + 1);
+  const installToken = crypto.randomBytes(32).toString("base64url");
 
   const server = await resolveDefaultServer(input.tenantId, input.serverHost);
   const host = server?.host ?? input.serverHost ?? VPN_HOST;
@@ -101,6 +102,7 @@ export async function createDevice(input: {
         vpnIp: wgIp,
         status: "PENDING",
         provisionStatus: "PENDING",
+        installToken,
         expiresAt,
         wireguardPeer: {
           create: {
@@ -132,6 +134,7 @@ export async function createDevice(input: {
       vpnIp: classicVpnIp,
       status: "PENDING",
       provisionStatus: "PENDING",
+      installToken,
       expiresAt,
       vpnAccount: {
         create: {

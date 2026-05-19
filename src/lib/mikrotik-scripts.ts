@@ -4,6 +4,7 @@ import {
   formatWireGuardAddressCidr,
   formatWireGuardIpv4,
 } from "@/lib/wireguard-ip";
+import { VPN_OVPN_PORT, VPN_SSTP_PORT } from "@/lib/config";
 
 type ClassicVpnParams = {
   protocol: "L2TP" | "SSTP" | "OVPN";
@@ -11,6 +12,8 @@ type ClassicVpnParams = {
   username: string;
   password: string;
   ipsecSecret?: string | null;
+  sstpPort?: number;
+  ovpnPort?: number;
 };
 
 type WireGuardParams = {
@@ -23,28 +26,25 @@ type WireGuardParams = {
 };
 
 export function generateClassicVpnScript(params: ClassicVpnParams): string {
-  const { protocol, host, username, password, ipsecSecret } = params;
+  const {
+    protocol,
+    host,
+    username,
+    password,
+    ipsecSecret,
+    sstpPort = VPN_SSTP_PORT,
+    ovpnPort = VPN_OVPN_PORT,
+  } = params;
 
   switch (protocol) {
     case "L2TP":
-      return `# Une commande à la fois dans le terminal MikroTik
-/interface l2tp-client add name=l2tp-vpn connect-to=${host} user=${username} password=${password} use-ipsec=yes ipsec-secret=${ipsecSecret ?? "SECRET"} disabled=no`;
+      return `/interface l2tp-client add name=l2tp-nanotech connect-to=${host} user=${username} password=${password} use-ipsec=yes ipsec-secret=${ipsecSecret ?? "SECRET"} disabled=no`;
 
     case "SSTP":
-      return `/interface sstp-client add \\
-name=sstp-vpn \\
-connect-to=${host} \\
-user=${username} \\
-password=${password} \\
-disabled=no`;
+      return `/interface sstp-client add name=sstp-nanotech connect-to=${host} port=${sstpPort} user=${username} password=${password} verify-server-certificate=no disabled=no`;
 
     case "OVPN":
-      return `/interface ovpn-client add \\
-name=ovpn-vpn \\
-connect-to=${host} \\
-user=${username} \\
-password=${password} \\
-disabled=no`;
+      return `/interface ovpn-client add name=ovpn-nanotech connect-to=${host} port=${ovpnPort} protocol=udp user=${username} password=${password} cipher=aes256 auth=sha256 verify-server-certificate=no disabled=no`;
   }
 }
 
