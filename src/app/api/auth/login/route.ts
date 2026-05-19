@@ -4,7 +4,9 @@ import { createSession, verifyPassword } from "@/lib/auth";
 
 export async function POST(request: Request) {
   try {
-    const { email, password } = await request.json();
+    const body = await request.json();
+    const email = String(body.email ?? "").trim().toLowerCase();
+    const password = String(body.password ?? "");
 
     const user = await prisma.user.findUnique({
       where: { email },

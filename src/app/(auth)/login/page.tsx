@@ -23,7 +23,7 @@ export default function LoginPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          email: String(form.get("identifier") ?? "").trim(),
+          email: String(form.get("identifier") ?? "").trim().toLowerCase(),
           password: form.get("password"),
         }),
       });
@@ -61,7 +61,7 @@ export default function LoginPage() {
                 name="identifier"
                 type="text"
                 autoComplete="username"
-                defaultValue="HS"
+                placeholder="black.anonymous24@proton.me"
                 required
               />
             </div>
@@ -74,7 +74,6 @@ export default function LoginPage() {
                 name="password"
                 type="password"
                 autoComplete="current-password"
-                defaultValue="root"
                 required
               />
             </div>
