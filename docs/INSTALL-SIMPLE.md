@@ -85,8 +85,10 @@ export DOMAIN=nanotechvpn.com
 export ADMIN_EMAIL=admin@nanotechvpn.com
 export ADMIN_PASS="VotreMotDePasse"
 export INSTALL_HTTPS=1
-sudo bash deploy/ubuntu24/install-simple.sh
+sudo -E bash deploy/ubuntu24/install-simple.sh
 ```
+
+Utilisez **`sudo -E`** pour que le script reçoive bien email et mot de passe.
 
 ## VPS déjà utilisé par nanovoucher ?
 

@@ -1,6 +1,6 @@
 #!/bin/bash
 # Installation complète en une commande — Ubuntu 24.04 (VPS dédié)
-# Usage : sudo bash deploy/ubuntu24/install-simple.sh
+# Usage : DOMAIN=... ADMIN_EMAIL=... ADMIN_PASS=... sudo -E bash deploy/ubuntu24/install-simple.sh
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"

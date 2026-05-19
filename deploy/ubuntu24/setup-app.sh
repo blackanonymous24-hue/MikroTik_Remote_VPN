@@ -15,7 +15,13 @@ if ! command -v node &>/dev/null; then
 fi
 
 echo "==> Utilisateur application"
-id "$APP_USER" &>/dev/null || useradd -r -m -s /bin/bash "$APP_USER"
+if ! id "$APP_USER" &>/dev/null; then
+  if getent group "$APP_USER" &>/dev/null; then
+    useradd -r -m -s /bin/bash -g "$APP_USER" "$APP_USER"
+  else
+    useradd -r -m -s /bin/bash "$APP_USER"
+  fi
+fi
 usermod -aG nanotech "$APP_USER" 2>/dev/null || true
 
 echo "==> Déploiement code → ${APP_DIR}"
