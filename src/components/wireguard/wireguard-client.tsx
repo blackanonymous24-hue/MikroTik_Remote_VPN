@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { Activity, Download, Info, Loader2 } from "lucide-react";
+import { Activity, Download, Info, Loader2, RefreshCw } from "lucide-react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -47,6 +48,18 @@ export function WireGuardClient({
   const [detailOpen, setDetailOpen] = useState(false);
   const [script, setScript] = useState("");
   const [selected, setSelected] = useState<WireGuardDevice | null>(null);
+
+  async function handleSync(deviceId: string) {
+    try {
+      const res = await fetch(`/api/devices/${deviceId}/sync`, { method: "POST" });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "Échec");
+      toast.success("WireGuard synchronisé");
+      window.location.reload();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Échec sync");
+    }
+  }
 
   function openInstall(device: WireGuardDevice) {
     if (!device.wireguardPeer) return;
@@ -128,8 +141,17 @@ export function WireGuardClient({
                         variant="outline"
                         size="sm"
                         className="h-8 px-2"
+                        onClick={() => handleSync(device.id)}
+                        title="Synchroniser sur le serveur"
+                      >
+                        <RefreshCw className="h-3.5 w-3.5" />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-8 px-2"
                         onClick={() => openInstall(device)}
-                        title="Installer"
+                        title="Script MikroTik"
                       >
                         <Download className="h-3.5 w-3.5" />
                       </Button>

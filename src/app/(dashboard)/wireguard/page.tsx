@@ -1,5 +1,6 @@
 import { getSession } from "@/lib/auth";
 import { listWireGuardDevices } from "@/lib/device-service";
+import { getWireGuardServerPublicKeyForUi } from "@/lib/vpn-sync";
 import { PageHeader } from "@/components/layout/page-header";
 import { WireGuardClient } from "@/components/wireguard/wireguard-client";
 
@@ -7,6 +8,7 @@ export default async function WireGuardPage() {
   const session = await getSession();
   if (!session) return null;
 
+  const serverPublicKey = await getWireGuardServerPublicKeyForUi();
   const devices = await listWireGuardDevices(session.tenantId);
 
   const serialized = devices.map((d) => ({
@@ -30,11 +32,7 @@ export default async function WireGuardPage() {
       />
       <WireGuardClient
         devices={serialized}
-        serverPublicKey={
-          process.env.WG_SERVER_PUBLIC_KEY ??
-          process.env.NEXT_PUBLIC_WG_SERVER_PUBLIC_KEY ??
-          ""
-        }
+        serverPublicKey={serverPublicKey}
       />
     </>
   );

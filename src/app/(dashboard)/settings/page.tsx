@@ -4,6 +4,8 @@ import { prisma } from "@/lib/prisma";
 import { PageHeader } from "@/components/layout/page-header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { LogoutButton } from "@/components/settings/logout-button";
+import { SyncVpnButton } from "@/components/settings/sync-vpn-button";
+import { getWireGuardServerPublicKeyForUi } from "@/lib/vpn-sync";
 
 export default async function SettingsPage() {
   const session = await getSession();
@@ -12,6 +14,8 @@ export default async function SettingsPage() {
   const tenant = await prisma.tenant.findUnique({
     where: { id: session.tenantId },
   });
+
+  const wgServerKey = await getWireGuardServerPublicKeyForUi();
 
   return (
     <>
@@ -55,6 +59,25 @@ export default async function SettingsPage() {
               VPN classique : ports Winbox/WebFig/API distincts par device.
               WireGuard : une IP pour tous les services.
             </p>
+            <div className="pt-2 border-t border-border">
+              <p className="text-xs text-muted-foreground mb-1">Clé publique serveur WG</p>
+              <p className="font-mono text-[10px] break-all text-foreground/80">
+                {wgServerKey || "Non configurée — wg show wg0 public-key sur le VPS"}
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle>Synchronisation VPN</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <p className="text-xs text-muted-foreground">
+              Met à jour host, endpoints, secret L2TP et reprovisionne sur le serveur tous les
+              routeurs déjà actifs ou en échec. Les nouveaux routeurs utilisent automatiquement la
+              config actuelle.
+            </p>
+            <SyncVpnButton />
           </CardContent>
         </Card>
         <LogoutButton />

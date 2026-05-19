@@ -56,6 +56,10 @@ async function main() {
     where: { id: "default-server" },
     update: {
       host: process.env.NEXT_PUBLIC_VPN_HOST ?? "vpn.nanotechvpn.com",
+      wgPublicKey:
+        process.env.WG_SERVER_PUBLIC_KEY ??
+        process.env.NEXT_PUBLIC_WG_SERVER_PUBLIC_KEY ??
+        null,
       sshHost: process.env.VPN_SSH_HOST ?? "127.0.0.1",
       sshUser: process.env.VPN_SSH_USER ?? "root",
       sshPort: Number(process.env.VPN_SSH_PORT ?? 22),
@@ -65,6 +69,10 @@ async function main() {
       id: "default-server",
       name: "nanoTECH VPN",
       host: process.env.NEXT_PUBLIC_VPN_HOST ?? "vpn.nanotechvpn.com",
+      wgPublicKey:
+        process.env.WG_SERVER_PUBLIC_KEY ??
+        process.env.NEXT_PUBLIC_WG_SERVER_PUBLIC_KEY ??
+        null,
       wgPort: 51820,
       sshHost: process.env.VPN_SSH_HOST ?? "127.0.0.1",
       sshUser: process.env.VPN_SSH_USER ?? "root",

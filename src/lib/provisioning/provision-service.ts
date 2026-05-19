@@ -4,6 +4,8 @@ import {
   getProvisioner,
   logProvision,
 } from "@/lib/provisioning";
+import { syncVpnServerFromEnvironment } from "@/lib/vpn-server-config";
+import { syncDeviceVpnMetadata } from "@/lib/vpn-sync";
 
 export async function getDeviceForProvision(deviceId: string, tenantId: string) {
   return prisma.device.findFirst({
@@ -32,8 +34,14 @@ export async function provisionDevice(deviceId: string, tenantId: string) {
   const device = await getDeviceForProvision(deviceId, tenantId);
   if (!device) throw new Error("DEVICE_NOT_FOUND");
 
-  const server = device.vpnServer ?? (await resolveVpnServer(tenantId, device.vpnServerId));
+  const { server: defaultServer } = await syncVpnServerFromEnvironment();
+  const server =
+    device.vpnServer ??
+    (await resolveVpnServer(tenantId, device.vpnServerId)) ??
+    defaultServer;
   const host = server?.host ?? device.vpnAccount?.host ?? "vpn.nanotechvpn.com";
+
+  await syncDeviceVpnMetadata(device, server?.id ?? defaultServer.id);
 
   await prisma.device.update({
     where: { id: deviceId },
@@ -46,7 +54,10 @@ export async function provisionDevice(deviceId: string, tenantId: string) {
 
   await logProvision(deviceId, "provision", "started");
 
-  const payload = buildProvisionPayload(device, host);
+  const fresh = await getDeviceForProvision(deviceId, tenantId);
+  if (!fresh) throw new Error("DEVICE_NOT_FOUND");
+
+  const payload = buildProvisionPayload(fresh, host);
   const provisioner = getProvisioner(server);
 
   try {

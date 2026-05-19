@@ -3,6 +3,7 @@ import { allocateClassicVpnIpv4 } from "@/lib/classic-vpn-ip";
 import { allocateWireGuardIpv4 } from "@/lib/wireguard-ip";
 import { generateWireGuardKeyPair } from "@/lib/wireguard-keys";
 import { getProvisionMode } from "@/lib/env";
+import { VPN_HOST, VPN_WG_ENDPOINT } from "@/lib/config";
 import type { DeviceProtocol, DeviceStatus } from "@prisma/client";
 import crypto from "crypto";
 
@@ -84,7 +85,8 @@ export async function createDevice(input: {
   expiresAt.setMonth(expiresAt.getMonth() + 1);
 
   const server = await resolveDefaultServer(input.tenantId, input.serverHost);
-  const host = server?.host ?? input.serverHost ?? "vpn.nanotechvpn.com";
+  const host = server?.host ?? input.serverHost ?? VPN_HOST;
+  const wgEndpoint = VPN_WG_ENDPOINT;
 
   if (input.protocol === "WIREGUARD") {
     const wgIp = allocateWireGuardIpv4(count);
@@ -105,7 +107,7 @@ export async function createDevice(input: {
             publicKey: keys.publicKey,
             privateKey: keys.privateKey,
             vpnIp: wgIp,
-            endpoint: `${host}:51820`,
+            endpoint: wgEndpoint,
           },
         },
       },

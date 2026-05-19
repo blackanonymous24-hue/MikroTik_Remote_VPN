@@ -55,6 +55,18 @@ export function DevicesClient({ devices }: { devices: DeviceRow[] }) {
     }
   }
 
+  async function handleSync(id: string) {
+    try {
+      const res = await fetch(`/api/devices/${id}/sync`, { method: "POST" });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "Échec");
+      toast.success("VPN synchronisé sur le serveur");
+      router.refresh();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Échec sync");
+    }
+  }
+
   async function confirmDeprovision() {
     if (!deprovisionTarget) return;
     setDeprovisioning(true);
@@ -141,7 +153,16 @@ export function DevicesClient({ devices }: { devices: DeviceRow[] }) {
                           <RefreshCw className="h-3.5 w-3.5" />
                         </Button>
                       ) : (
-                        <div className="ml-2 border-l border-border pl-2">
+                        <>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-8 w-8 p-0"
+                            onClick={() => handleSync(device.id)}
+                            title="Synchroniser (met à jour le serveur)"
+                          >
+                            <RefreshCw className="h-3.5 w-3.5" />
+                          </Button>
                           <Button
                             variant="outline"
                             size="sm"
@@ -151,7 +172,7 @@ export function DevicesClient({ devices }: { devices: DeviceRow[] }) {
                           >
                             <Trash2 className="h-3.5 w-3.5" />
                           </Button>
-                        </div>
+                        </>
                       )}
                     </div>
                   </TableCell>

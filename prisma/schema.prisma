@@ -73,6 +73,7 @@ model VpnServer {
   tenantId     String?
   name         String
   host         String   @default("vpn.nanotechvpn.com")
+  wgPublicKey  String?
   wgPort       Int      @default(51820)
   sshHost      String?
   sshPort      Int      @default(22)
