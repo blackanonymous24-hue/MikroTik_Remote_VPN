@@ -1,6 +1,5 @@
 "use client";
 
-import { WG_NETWORK_CIDR } from "@/lib/wireguard-ip";
 import {
   Dialog,
   DialogContent,
@@ -10,6 +9,7 @@ import {
 } from "@/components/ui/dialog";
 import { CopyButton } from "@/components/shared/copy-button";
 import { StatusBadge } from "@/components/shared/status-badge";
+import { getWireGuardVpnIpDisplay } from "@/lib/mikrotik-scripts";
 import type { DeviceStatus } from "@prisma/client";
 
 type WgDetailDialogProps = {
@@ -27,24 +27,22 @@ export function WgDetailDialog({
   vpnIp,
   status,
 }: WgDetailDialogProps) {
+  const displayIp = getWireGuardVpnIpDisplay(vpnIp);
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Détail — {deviceName}</DialogTitle>
           <DialogDescription>
-            Adresse IPv4 privée sur le tunnel WireGuard — Winbox, WebFig, API et SSH
+            WireGuard : la même adresse sert pour Winbox, WebFig et API (port 8728 sur le tunnel).
           </DialogDescription>
         </DialogHeader>
         <div className="rounded-lg border border-border bg-muted/30 p-6">
-          <p className="text-sm font-medium text-muted-foreground">Adresse IPv4 VPN</p>
-          <p className="mt-2 font-mono text-2xl font-semibold text-primary">{vpnIp}</p>
-          <p className="mt-1 text-xs text-muted-foreground">Réseau {WG_NETWORK_CIDR}</p>
-          <p className="mt-2 text-xs text-muted-foreground">
-            Winbox · WebFig · API · SSH
-          </p>
+          <p className="text-sm font-medium text-muted-foreground">Adresse VPN</p>
+          <p className="mt-2 font-mono text-2xl font-semibold text-primary">{displayIp}</p>
           <div className="mt-4 flex items-center gap-3">
-            <CopyButton value={vpnIp} label="Adresse VPN" />
+            <CopyButton value={displayIp} label="Copier adresse VPN" />
             <StatusBadge status={status} />
           </div>
         </div>

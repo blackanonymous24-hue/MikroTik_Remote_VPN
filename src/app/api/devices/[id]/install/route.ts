@@ -2,11 +2,7 @@ import { NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
 import { APP_URL } from "@/lib/config";
 import { prisma } from "@/lib/prisma";
-import {
-  buildMikrotikFetchCommand,
-  buildMikrotikImportFile,
-  ensureDeviceInstallToken,
-} from "@/lib/mikrotik-install-bundle";
+import { buildMikrotikFetchCommand, ensureDeviceInstallToken } from "@/lib/mikrotik-install-bundle";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -31,12 +27,10 @@ export async function GET(_request: Request, { params }: Params) {
   const base = APP_URL.replace(/\/$/, "");
   const installUrl = `${base}/v/in/${token}`;
   const fetchScript = buildMikrotikFetchCommand(installUrl, base.startsWith("https"));
-  const manualScript = await buildMikrotikImportFile(id);
 
   return NextResponse.json({
     installUrl,
     fetchScript,
-    manualScript,
     provisionStatus: device.provisionStatus,
   });
 }

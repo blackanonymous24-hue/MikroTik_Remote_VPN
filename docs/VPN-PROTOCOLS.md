@@ -2,10 +2,10 @@
 
 | Protocole | Service VPS | Port | MikroTik |
 |-----------|-------------|------|----------|
-| L2TP + IPsec | xl2tpd + strongswan | 1701/udp, 500/4500 | `l2tp-nanotech` |
+| L2TP + IPsec | xl2tpd + strongswan | 1701/udp, 500/4500 | `l2tp-vpn` |
 | WireGuard | wg0 | 51820/udp | `wg-nanotech` |
-| SSTP | accel-ppp | 443/tcp ou **4443** si nginx utilise 443 | `sstp-nanotech` |
-| OpenVPN | openvpn-server@nanotech | 1194/udp | `ovpn-nanotech` |
+| SSTP | accel-ppp | 443/tcp ou **4443** si nginx utilise 443 | `sstp-vpn` |
+| OpenVPN | openvpn-server@nanotech | 1194/udp | `ovpn-vpn` |
 
 ## Mise à jour VPS existant
 

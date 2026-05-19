@@ -4,7 +4,14 @@ import {
   formatWireGuardAddressCidr,
   formatWireGuardIpv4,
 } from "@/lib/wireguard-ip";
-import { VPN_OVPN_PORT, VPN_SSTP_PORT } from "@/lib/config";
+import { VPN_HOST, VPN_OVPN_PORT, VPN_SSTP_PORT } from "@/lib/config";
+import {
+  ROS7_INTERFACE,
+  assertRos7Script,
+  parseWireGuardEndpoint,
+  quoteRos7,
+  toRos7ImportFile,
+} from "@/lib/mikrotik-ros7";
 
 type ClassicVpnParams = {
   protocol: "L2TP" | "SSTP" | "OVPN";
@@ -17,15 +24,14 @@ type ClassicVpnParams = {
 };
 
 type WireGuardParams = {
-  /** Clé privée du routeur MikroTik (client) */
   privateKey: string;
-  /** Clé publique du serveur VPS (pas celle du routeur) */
   serverPublicKey: string;
   vpnIp: string;
   endpoint: string;
 };
 
-export function generateClassicVpnScript(params: ClassicVpnParams): string {
+/** Commandes RouterOS v7 (une ligne = une commande, import .rsc). */
+export function buildClassicVpnCommands(params: ClassicVpnParams): string[] {
   const {
     protocol,
     host,
@@ -38,40 +44,63 @@ export function generateClassicVpnScript(params: ClassicVpnParams): string {
 
   switch (protocol) {
     case "L2TP":
-      return `/interface l2tp-client add name=l2tp-nanotech connect-to=${host} user=${username} password=${password} use-ipsec=yes ipsec-secret=${ipsecSecret ?? "SECRET"} disabled=no`;
-
-    case "SSTP":
-      return `/interface sstp-client add name=sstp-nanotech connect-to=${host} port=${sstpPort} user=${username} password=${password} verify-server-certificate=no disabled=no`;
-
-    case "OVPN":
-      return `/interface ovpn-client add name=ovpn-nanotech connect-to=${host} port=${ovpnPort} protocol=udp user=${username} password=${password} cipher=aes256 auth=sha256 verify-server-certificate=no disabled=no`;
+      return [
+        `/interface l2tp-client remove [find name=${ROS7_INTERFACE.l2tp}]`,
+        `/interface l2tp-client add name=${ROS7_INTERFACE.l2tp} connect-to=${host} user=${quoteRos7(username)} password=${quoteRos7(password)} use-ipsec=yes ipsec-secret=${quoteRos7(ipsecSecret ?? "SECRET")} disabled=no`,
+      ];
+    case "SSTP": {
+      const portPart = sstpPort !== 443 ? ` port=${sstpPort}` : "";
+      return [
+        `/interface sstp-client remove [find name=${ROS7_INTERFACE.sstp}]`,
+        `/interface sstp-client add name=${ROS7_INTERFACE.sstp} connect-to=${host}${portPart} user=${quoteRos7(username)} password=${quoteRos7(password)} verify-server-certificate=no disabled=no`,
+      ];
+    }
+    case "OVPN": {
+      const portPart = ovpnPort !== 1194 ? ` port=${ovpnPort}` : "";
+      return [
+        `/interface ovpn-client remove [find name=${ROS7_INTERFACE.ovpn}]`,
+        `/interface ovpn-client add name=${ROS7_INTERFACE.ovpn} connect-to=${host}${portPart} protocol=udp user=${quoteRos7(username)} password=${quoteRos7(password)} verify-server-certificate=no disabled=no`,
+      ];
+    }
   }
 }
 
-export function generateWireGuardScript(params: WireGuardParams): string {
-  const [endpointHost, endpointPort] = params.endpoint.includes(":")
-    ? params.endpoint.split(":")
-    : [params.endpoint, "51820"];
-
+/** WireGuard RouterOS v7 — endpoint-address + endpoint-port (jamais endpoint=host:port). */
+export function buildWireGuardCommands(params: WireGuardParams): string[] {
+  const { host, port } = parseWireGuardEndpoint(params.endpoint);
   const addressCidr = formatWireGuardAddressCidr(params.vpnIp);
-  const clientIp = formatWireGuardIpv4(params.vpnIp);
+  const ifName = ROS7_INTERFACE.wireguard;
 
-  const steps = [
-    `/interface wireguard add name=wg-nanotech private-key="${params.privateKey}"`,
-    `/ip address add address=${addressCidr} interface=wg-nanotech`,
-    `/interface wireguard peers add interface=wg-nanotech public-key="${params.serverPublicKey}" endpoint-address=${endpointHost} endpoint-port=${endpointPort} allowed-address=${WG_NETWORK_CIDR} persistent-keepalive=25s`,
+  return [
+    `/interface wireguard peers remove [find interface=${ifName}]`,
+    `/ip address remove [find interface=${ifName}]`,
+    `/interface wireguard remove [find name=${ifName}]`,
+    `/interface wireguard add name=${ifName} private-key=${quoteRos7(params.privateKey)}`,
+    `/ip address add address=${addressCidr} interface=${ifName}`,
+    `/interface wireguard peers add interface=${ifName} public-key=${quoteRos7(params.serverPublicKey)} endpoint-address=${host} endpoint-port=${port} allowed-address=${WG_NETWORK_CIDR} persistent-keepalive=25s`,
   ];
+}
 
-  return `# ÉTAPES OBLIGATOIRES (dans l'ordre, une commande = une ligne + Entrée)
-# 1. Sur la plateforme : statut « Provisionné » (ACTIVE)
-# 2. Sur le MikroTik : exécuter les 3 commandes ci-dessous
-# 3. Puis Ping sur la plateforme
+/** @deprecated Utiliser buildClassicVpnCommands — conservé pour compatibilité interne */
+export function generateClassicVpnScript(params: ClassicVpnParams): string {
+  return toRos7ImportFile(buildClassicVpnCommands(params));
+}
 
-${steps.join("\n\n")}
+/** @deprecated Utiliser buildWireGuardCommands */
+export function generateWireGuardScript(params: WireGuardParams): string {
+  return toRos7ImportFile(buildWireGuardCommands(params));
+}
 
-# IP VPN du routeur : ${clientIp}
-# Clé publique SERVEUR (dans peer) : ${params.serverPublicKey}
-# Ne pas utiliser la clé publique du routeur dans public-key=`;
+export function buildWireGuardImportFile(params: WireGuardParams): string {
+  return toRos7ImportFile(buildWireGuardCommands(params));
+}
+
+export function buildClassicImportFile(params: ClassicVpnParams): string {
+  return toRos7ImportFile(buildClassicVpnCommands(params));
+}
+
+export function getWireGuardVpnIpDisplay(vpnIp: string): string {
+  return formatWireGuardIpv4(vpnIp);
 }
 
 export function isClassicProtocol(
@@ -79,3 +108,15 @@ export function isClassicProtocol(
 ): protocol is "L2TP" | "SSTP" | "OVPN" {
   return protocol === "L2TP" || protocol === "SSTP" || protocol === "OVPN";
 }
+
+/** Vérifie les scripts avant envoi au routeur. */
+export function validateMikrotikScript(script: string): boolean {
+  try {
+    assertRos7Script(script);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+export { ROS7_INTERFACE, VPN_HOST };

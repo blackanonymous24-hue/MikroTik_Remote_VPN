@@ -26,7 +26,11 @@ export async function GET(_request: Request, { params }: Params) {
         "Cache-Control": "no-store",
       },
     });
-  } catch {
-    return new NextResponse("# Erreur génération script", { status: 500 });
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : "Erreur génération script";
+    return new NextResponse(msg, {
+      status: 500,
+      headers: { "Content-Type": "text/plain; charset=utf-8" },
+    });
   }
 }

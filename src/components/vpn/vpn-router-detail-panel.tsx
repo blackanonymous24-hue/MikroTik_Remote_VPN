@@ -6,19 +6,18 @@ import { StatusBadge } from "@/components/shared/status-badge";
 import type { DeviceStatus } from "@prisma/client";
 import type { ClassicVpnDevice } from "@/components/vpn/vpn-accounts-client";
 
-type Endpoint = {
-  label: string;
-  service: string;
+type RemoteAccess = {
+  label: "Winbox" | "WebFig" | "API";
   address: string;
 };
 
-function buildEndpoints(device: ClassicVpnDevice): Endpoint[] {
+function buildRemoteAccess(device: ClassicVpnDevice): RemoteAccess[] {
   if (!device.vpnAccount) return [];
   const { host, winboxPort, webfigPort, apiPort } = device.vpnAccount;
   return [
-    { label: "Winbox", service: `winbox (${winboxPort})`, address: `${host}:${winboxPort}` },
-    { label: "WebFig", service: `www (${webfigPort})`, address: `${host}:${webfigPort}` },
-    { label: "API", service: `api (${apiPort})`, address: `${host}:${apiPort}` },
+    { label: "Winbox", address: `${host}:${winboxPort}` },
+    { label: "WebFig", address: `${host}:${webfigPort}` },
+    { label: "API", address: `${host}:${apiPort}` },
   ];
 }
 
@@ -28,7 +27,7 @@ async function copyText(value: string, label: string) {
 }
 
 export function VpnRouterDetailPanel({ device }: { device: ClassicVpnDevice }) {
-  const endpoints = buildEndpoints(device);
+  const endpoints = buildRemoteAccess(device);
   const protocol = device.protocol;
 
   return (
@@ -49,61 +48,29 @@ export function VpnRouterDetailPanel({ device }: { device: ClassicVpnDevice }) {
         )}
       </div>
 
-      <div className="overflow-x-auto rounded-lg border border-border bg-white">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b border-border bg-muted/40 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-              <th className="px-4 py-2.5">Adresse distante</th>
-              <th className="px-4 py-2.5">Service (port)</th>
-              <th className="px-4 py-2.5">Statut</th>
-              <th className="px-4 py-2.5 text-right">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {endpoints.map((ep) => (
-              <tr key={ep.label} className="border-b border-border last:border-0">
-                <td className="px-4 py-2">
-                  <div className="flex items-center gap-2">
-                    <input
-                      readOnly
-                      value={ep.address}
-                      className="h-9 min-w-[200px] flex-1 rounded-md border border-input bg-white px-3 font-mono text-xs"
-                    />
-                    <button
-                      type="button"
-                      title="Copier"
-                      onClick={() => copyText(ep.address, ep.label)}
-                      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-border bg-white hover:bg-muted"
-                    >
-                      <Copy className="h-4 w-4 text-muted-foreground" />
-                    </button>
-                  </div>
-                </td>
-                <td className="px-4 py-2">
-                  <select
-                    disabled
-                    value={ep.service}
-                    className="h-9 rounded-md border border-input bg-white px-3 text-xs"
-                  >
-                    <option>{ep.service}</option>
-                  </select>
-                </td>
-                <td className="px-4 py-2">
-                  <StatusBadge status={device.status as DeviceStatus} />
-                </td>
-                <td className="px-4 py-2 text-right">
-                  <button
-                    type="button"
-                    onClick={() => copyText(ep.address, ep.label)}
-                    className="text-xs font-medium text-primary hover:underline"
-                  >
-                    Copier
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+      <div className="grid gap-3 sm:grid-cols-3">
+        {endpoints.map((ep) => (
+          <div
+            key={ep.label}
+            className="rounded-lg border border-border bg-white p-4 shadow-sm"
+          >
+            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              {ep.label}
+            </p>
+            <p className="mt-2 font-mono text-sm font-medium text-foreground">{ep.address}</p>
+            <div className="mt-3 flex items-center justify-between gap-2">
+              <StatusBadge status={device.status as DeviceStatus} />
+              <button
+                type="button"
+                title="Copier"
+                onClick={() => copyText(ep.address, ep.label)}
+                className="flex h-8 w-8 items-center justify-center rounded-md border border-border hover:bg-muted"
+              >
+                <Copy className="h-3.5 w-3.5 text-muted-foreground" />
+              </button>
+            </div>
+          </div>
+        ))}
       </div>
     </div>
   );
