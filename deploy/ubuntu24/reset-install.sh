@@ -1,5 +1,6 @@
 #!/bin/bash
-# Efface l'installation précédente pour repartir avec install-simple.sh
+# Réinitialise l'app pour réinstaller (garde le VPS / VPN partiellement)
+# Pour TOUT supprimer sans trace : deploy/ubuntu24/uninstall-complete.sh
 # Usage : sudo bash deploy/ubuntu24/reset-install.sh
 set -euo pipefail
 
