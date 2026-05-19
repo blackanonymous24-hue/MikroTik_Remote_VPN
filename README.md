@@ -38,5 +38,6 @@ Super admin : **HS** / **root**
 
 | Déploiement | Guide |
 |-------------|--------|
-| VPS dédié | [docs/DEPLOY-UBUNTU24.md](docs/DEPLOY-UBUNTU24.md) |
+| **VPS — installation simple** | [docs/INSTALL-SIMPLE.md](docs/INSTALL-SIMPLE.md) → `sudo bash deploy/ubuntu24/install-simple.sh` |
+| VPS dédié (manuel) | [docs/DEPLOY-UBUNTU24.md](docs/DEPLOY-UBUNTU24.md) |
 | **Même VPS que nanovoucher.com** | [docs/DEPLOY-COHABITATION.md](docs/DEPLOY-COHABITATION.md) — port **3002**, base **`mikrotik_vpn`** |

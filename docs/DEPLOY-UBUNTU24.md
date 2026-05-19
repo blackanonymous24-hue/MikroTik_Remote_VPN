@@ -39,7 +39,15 @@ Variables obligatoires :
 
 `PROVISION_MODE=mock` est **interdit** en production (validation au démarrage).
 
-## Installation
+## Installation simple (recommandé)
+
+Voir **[INSTALL-SIMPLE.md](./INSTALL-SIMPLE.md)** — une commande :
+
+```bash
+sudo bash deploy/ubuntu24/install-simple.sh
+```
+
+## Installation manuelle (étape par étape)
 
 ```bash
 # 1. Base de données
