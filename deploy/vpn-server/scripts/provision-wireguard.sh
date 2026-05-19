@@ -18,11 +18,14 @@ else
   sed -i "s|^${DEVICE_ID}|.*|${ENTRY}|" "$WG_PEERS"
 fi
 
-# Ajout peer via wg si interface existe
-if command -v wg &>/dev/null && ip link show "$WG_IF" &>/dev/null; then
-  wg set "$WG_IF" peer "$PUBLIC_KEY" allowed-ips "${VPN_IP_CLEAN}/32" persistent-keepalive 25 2>/dev/null || \
-    log_err "Impossible d'ajouter le peer WireGuard"
-  log_ok "WireGuard peer ajouté: ${VPN_IP} sur ${WG_IF}"
-else
-  log_ok "WireGuard peer enregistré (interface ${WG_IF} non active — redémarrer wg-quick@${WG_IF})"
+# Ajout peer via wg — échec si wg0 inactif (ne pas marquer ACTIVE à tort)
+if ! command -v wg &>/dev/null; then
+  log_err "Commande wg introuvable"
 fi
+if ! ip link show "$WG_IF" &>/dev/null; then
+  log_err "Interface ${WG_IF} inactive — systemctl start wg-quick@${WG_IF}"
+fi
+if ! wg set "$WG_IF" peer "$PUBLIC_KEY" allowed-ips "${VPN_IP_CLEAN}/32" persistent-keepalive 25; then
+  log_err "Impossible d'ajouter le peer WireGuard sur ${WG_IF}"
+fi
+log_ok "WireGuard peer ajouté: ${VPN_IP_CLEAN} sur ${WG_IF}"

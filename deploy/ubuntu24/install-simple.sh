@@ -71,6 +71,17 @@ bash "$REPO_ROOT/deploy/ubuntu24/setup-vpn-server.sh"
 echo ""
 echo "==> 3/4 Fichier de configuration (.env)"
 mkdir -p "$APP_DIR"
+
+WG_SERVER_PUB=""
+if [[ -f /var/lib/nanotech-vpn/wg-server-public.key ]]; then
+  WG_SERVER_PUB=$(tr -d '\n' < /var/lib/nanotech-vpn/wg-server-public.key)
+elif command -v wg &>/dev/null && ip link show wg0 &>/dev/null 2>&1; then
+  WG_SERVER_PUB=$(wg show wg0 public-key | tr -d '\n')
+fi
+
+SSTP_PORT="443"
+[[ -f /var/lib/nanotech-vpn/sstp-port ]] && SSTP_PORT=$(tr -d '\n' < /var/lib/nanotech-vpn/sstp-port)
+
 cat > "$APP_DIR/.env" <<EOF
 NODE_ENV=production
 PORT=3000
@@ -82,22 +93,20 @@ NEXT_PUBLIC_APP_DOMAIN="${DOMAIN}"
 NEXT_PUBLIC_APP_URL="https://${DOMAIN}"
 NEXT_PUBLIC_VPN_HOST="${VPN_HOST}"
 NEXT_PUBLIC_VPN_WG_ENDPOINT="${VPN_HOST}:51820"
+NEXT_PUBLIC_SSTP_PORT="${SSTP_PORT}"
+NEXT_PUBLIC_OVPN_PORT="1194"
 
 PROVISION_MODE=local
 VPN_PROVISION_PATH=/opt/nanotech-vpn
 
 L2TP_IPSEC_SECRET="${L2TP_IPSEC_SECRET}"
-
-WG_SERVER_PUB=""
-if [[ -f /var/lib/nanotech-vpn/wg-server-public.key ]]; then
-  WG_SERVER_PUB=$(cat /var/lib/nanotech-vpn/wg-server-public.key)
-fi
-WG_SERVER_PUBLIC_KEY=${WG_SERVER_PUB}
-NEXT_PUBLIC_WG_SERVER_PUBLIC_KEY=${WG_SERVER_PUB}
+WG_SERVER_PUBLIC_KEY="${WG_SERVER_PUB}"
+NEXT_PUBLIC_WG_SERVER_PUBLIC_KEY="${WG_SERVER_PUB}"
 
 SEED_ADMIN_EMAIL=${ADMIN_EMAIL}
 SEED_ADMIN_PASSWORD=${ADMIN_PASS}
 SEED_DEMO_DEVICES=0
+RUN_SEED=1
 EOF
 if ! id nanotech &>/dev/null; then
   if getent group nanotech &>/dev/null; then
