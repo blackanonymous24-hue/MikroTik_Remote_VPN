@@ -27,15 +27,29 @@ export async function POST(request: Request) {
     });
 
     const autoProvision = body.autoProvision !== false;
+    let provision: Awaited<ReturnType<typeof provisionDevice>> | null = null;
     if (autoProvision) {
-      await provisionDevice(device.id, session.tenantId);
+      provision = await provisionDevice(device.id, session.tenantId);
     }
 
     const refreshed = await listDevicesForTenant(session.tenantId);
     const created = refreshed.find((d) => d.id === device.id) ?? device;
 
-    return NextResponse.json(created, { status: 201 });
-  } catch {
-    return NextResponse.json({ error: "Erreur création" }, { status: 500 });
+    return NextResponse.json(
+      {
+        device: created,
+        provision,
+        nextStep:
+          provision?.success === false
+            ? "server_failed"
+            : created.provisionStatus === "ACTIVE"
+              ? "configure_mikrotik"
+              : "provision_manually",
+      },
+      { status: 201 }
+    );
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Erreur création";
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

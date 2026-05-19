@@ -5,6 +5,7 @@ import { PageHeader } from "@/components/layout/page-header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { LogoutButton } from "@/components/settings/logout-button";
 import { SyncVpnButton } from "@/components/settings/sync-vpn-button";
+import { VpnDiagnosticsCard } from "@/components/settings/vpn-diagnostics-card";
 import { getWireGuardServerPublicKeyForUi } from "@/lib/vpn-sync";
 
 export default async function SettingsPage() {
@@ -67,6 +68,7 @@ export default async function SettingsPage() {
             </div>
           </CardContent>
         </Card>
+        <VpnDiagnosticsCard />
         <Card>
           <CardHeader>
             <CardTitle>Synchronisation VPN</CardTitle>

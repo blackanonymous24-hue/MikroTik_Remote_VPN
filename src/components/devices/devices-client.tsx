@@ -121,7 +121,17 @@ export function DevicesClient({ devices }: { devices: DeviceRow[] }) {
                     <StatusBadge status={device.status} />
                   </TableCell>
                   <TableCell>
-                    <ProvisionBadge status={device.provisionStatus} />
+                    <div className="flex flex-col gap-0.5">
+                      <ProvisionBadge status={device.provisionStatus} />
+                      {device.provisionError && (
+                        <span
+                          className="max-w-[140px] truncate text-[10px] text-destructive"
+                          title={device.provisionError}
+                        >
+                          {device.provisionError}
+                        </span>
+                      )}
+                    </div>
                   </TableCell>
                   <TableCell className="text-xs tabular-nums">
                     {latency != null ? latency : "—"}

@@ -9,7 +9,8 @@ parse_args "$@"
 [[ -n "$VPN_IP" ]] || log_err "vpn-ip requis"
 
 WG_IF="${WG_INTERFACE:-wg0}"
-ENTRY="${DEVICE_ID}|${PUBLIC_KEY}|${VPN_IP}"
+VPN_IP_CLEAN="${VPN_IP%%/*}"
+ENTRY="${DEVICE_ID}|${PUBLIC_KEY}|${VPN_IP_CLEAN}"
 
 if ! grep -q "^${DEVICE_ID}|" "$WG_PEERS" 2>/dev/null; then
   echo "$ENTRY" >> "$WG_PEERS"
@@ -19,7 +20,7 @@ fi
 
 # Ajout peer via wg si interface existe
 if command -v wg &>/dev/null && ip link show "$WG_IF" &>/dev/null; then
-  wg set "$WG_IF" peer "$PUBLIC_KEY" allowed-ips "${VPN_IP}/32" persistent-keepalive 25 2>/dev/null || \
+  wg set "$WG_IF" peer "$PUBLIC_KEY" allowed-ips "${VPN_IP_CLEAN}/32" persistent-keepalive 25 2>/dev/null || \
     log_err "Impossible d'ajouter le peer WireGuard"
   log_ok "WireGuard peer ajouté: ${VPN_IP} sur ${WG_IF}"
 else

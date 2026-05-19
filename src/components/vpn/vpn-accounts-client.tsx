@@ -93,6 +93,18 @@ export function VpnAccountsClient({ devices }: { devices: ClassicVpnDevice[] }) 
     return vpnEnabledOverrides[device.id] ?? device.vpnEnabled;
   }
 
+  async function handleProvision(deviceId: string) {
+    try {
+      const res = await fetch(`/api/devices/${deviceId}/provision`, { method: "POST" });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message ?? data.error ?? "Échec");
+      toast.success("Provisionné sur le serveur — installez le script MikroTik");
+      router.refresh();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Provisionnement échoué");
+    }
+  }
+
   async function toggleVpnServer(device: ClassicVpnDevice) {
     const current = resolveVpnEnabled(device);
     const next = !current;
@@ -208,7 +220,19 @@ export function VpnAccountsClient({ devices }: { devices: ClassicVpnDevice[] }) 
                       disabled={!canToggleVpn}
                       onClick={() => toggleVpnServer(device)}
                     />
-                    <InstallerButton onClick={() => openInstall(device)} />
+                    {device.provisionStatus === "ACTIVE" ? (
+                      <InstallerButton onClick={() => openInstall(device)} />
+                    ) : (
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="secondary"
+                        className="h-8 text-xs"
+                        onClick={() => handleProvision(device.id)}
+                      >
+                        Provisionner
+                      </Button>
+                    )}
                     <DetailButton active={isExpanded} onClick={() => toggleDetail(device.id)} />
                   </div>
                   <div className="ml-1 border-l border-border pl-3">

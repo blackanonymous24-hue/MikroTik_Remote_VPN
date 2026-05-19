@@ -27,14 +27,8 @@ export function generateClassicVpnScript(params: ClassicVpnParams): string {
 
   switch (protocol) {
     case "L2TP":
-      return `/interface l2tp-client add \\
-name=l2tp-vpn \\
-connect-to=${host} \\
-user=${username} \\
-password=${password} \\
-use-ipsec=yes \\
-ipsec-secret=${ipsecSecret ?? "SECRET"} \\
-disabled=no`;
+      return `# Une commande à la fois dans le terminal MikroTik
+/interface l2tp-client add name=l2tp-vpn connect-to=${host} user=${username} password=${password} use-ipsec=yes ipsec-secret=${ipsecSecret ?? "SECRET"} disabled=no`;
 
     case "SSTP":
       return `/interface sstp-client add \\
@@ -62,17 +56,22 @@ export function generateWireGuardScript(params: WireGuardParams): string {
   const addressCidr = formatWireGuardAddressCidr(params.vpnIp);
   const clientIp = formatWireGuardIpv4(params.vpnIp);
 
-  return `# Collez chaque bloc séparément dans le terminal MikroTik (une commande à la fois).
-# Ne pas coller ligne par ligne après un \\ — RouterOS exécute chaque ligne séparément.
+  const steps = [
+    `/interface wireguard add name=wg-nanotech private-key="${params.privateKey}"`,
+    `/ip address add address=${addressCidr} interface=wg-nanotech`,
+    `/interface wireguard peers add interface=wg-nanotech public-key="${params.serverPublicKey}" endpoint-address=${endpointHost} endpoint-port=${endpointPort} allowed-address=${WG_NETWORK_CIDR} persistent-keepalive=25s`,
+  ];
 
-/interface wireguard add name=wg-nanotech private-key="${params.privateKey}"
+  return `# ÉTAPES OBLIGATOIRES (dans l'ordre, une commande = une ligne + Entrée)
+# 1. Sur la plateforme : statut « Provisionné » (ACTIVE)
+# 2. Sur le MikroTik : exécuter les 3 commandes ci-dessous
+# 3. Puis Ping sur la plateforme
 
-/ip address add address=${addressCidr} interface=wg-nanotech
+${steps.join("\n\n")}
 
-/interface wireguard peers add interface=wg-nanotech public-key="${params.serverPublicKey}" endpoint-address=${endpointHost} endpoint-port=${endpointPort} allowed-address=${WG_NETWORK_CIDR} persistent-keepalive=25s
-
-# IPv4 VPN du routeur : ${clientIp} (réseau ${WG_NETWORK_CIDR})
-# Clé publique serveur (peer) : ${params.serverPublicKey}`;
+# IP VPN du routeur : ${clientIp}
+# Clé publique SERVEUR (dans peer) : ${params.serverPublicKey}
+# Ne pas utiliser la clé publique du routeur dans public-key=`;
 }
 
 export function isClassicProtocol(
