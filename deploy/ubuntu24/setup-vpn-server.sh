@@ -116,6 +116,13 @@ EOF
   systemctl start wg-quick@wg0 || true
 fi
 
+WG_PUB_FILE="/var/lib/nanotech-vpn/wg-server-public.key"
+if command -v wg &>/dev/null && ip link show wg0 &>/dev/null; then
+  wg show wg0 public-key | tr -d '\n' > "$WG_PUB_FILE"
+  chmod 644 "$WG_PUB_FILE"
+  echo "Clé publique serveur WireGuard : $(cat "$WG_PUB_FILE")"
+fi
+
 echo "==> IP forwarding"
 grep -q 'net.ipv4.ip_forward=1' /etc/sysctl.conf || echo 'net.ipv4.ip_forward=1' >> /etc/sysctl.conf
 sysctl -p

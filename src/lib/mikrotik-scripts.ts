@@ -14,8 +14,10 @@ type ClassicVpnParams = {
 };
 
 type WireGuardParams = {
+  /** Clé privée du routeur MikroTik (client) */
   privateKey: string;
-  publicKey: string;
+  /** Clé publique du serveur VPS (pas celle du routeur) */
+  serverPublicKey: string;
   vpnIp: string;
   endpoint: string;
 };
@@ -60,22 +62,17 @@ export function generateWireGuardScript(params: WireGuardParams): string {
   const addressCidr = formatWireGuardAddressCidr(params.vpnIp);
   const clientIp = formatWireGuardIpv4(params.vpnIp);
 
-  return `/interface wireguard add \\
-name=wg-nanotech \\
-private-key="${params.privateKey}"
+  return `# Collez chaque bloc séparément dans le terminal MikroTik (une commande à la fois).
+# Ne pas coller ligne par ligne après un \\ — RouterOS exécute chaque ligne séparément.
 
-/ip address add \\
-address=${addressCidr} \\
-interface=wg-nanotech
+/interface wireguard add name=wg-nanotech private-key="${params.privateKey}"
 
-/interface wireguard peers add \\
-interface=wg-nanotech \\
-public-key="${params.publicKey}" \\
-endpoint=${endpointHost}:${endpointPort} \\
-allowed-address=${WG_NETWORK_CIDR} \\
-persistent-keepalive=25
+/ip address add address=${addressCidr} interface=wg-nanotech
 
-# IPv4 VPN du routeur : ${clientIp} (réseau ${WG_NETWORK_CIDR})`;
+/interface wireguard peers add interface=wg-nanotech public-key="${params.serverPublicKey}" endpoint-address=${endpointHost} endpoint-port=${endpointPort} allowed-address=${WG_NETWORK_CIDR} persistent-keepalive=25s
+
+# IPv4 VPN du routeur : ${clientIp} (réseau ${WG_NETWORK_CIDR})
+# Clé publique serveur (peer) : ${params.serverPublicKey}`;
 }
 
 export function isClassicProtocol(

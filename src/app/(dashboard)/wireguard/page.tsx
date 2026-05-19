@@ -28,7 +28,14 @@ export default async function WireGuardPage() {
         title="WireGuard"
         description="Peers WireGuard — accès unifié via IP VPN"
       />
-      <WireGuardClient devices={serialized} />
+      <WireGuardClient
+        devices={serialized}
+        serverPublicKey={
+          process.env.WG_SERVER_PUBLIC_KEY ??
+          process.env.NEXT_PUBLIC_WG_SERVER_PUBLIC_KEY ??
+          ""
+        }
+      />
     </>
   );
 }

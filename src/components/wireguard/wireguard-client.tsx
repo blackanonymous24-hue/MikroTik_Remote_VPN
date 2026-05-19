@@ -35,7 +35,13 @@ export type WireGuardDevice = {
   } | null;
 };
 
-export function WireGuardClient({ devices }: { devices: WireGuardDevice[] }) {
+export function WireGuardClient({
+  devices,
+  serverPublicKey,
+}: {
+  devices: WireGuardDevice[];
+  serverPublicKey: string;
+}) {
   const { ping, pingingId, latencies } = useDevicePing();
   const [scriptOpen, setScriptOpen] = useState(false);
   const [detailOpen, setDetailOpen] = useState(false);
@@ -45,14 +51,20 @@ export function WireGuardClient({ devices }: { devices: WireGuardDevice[] }) {
   function openInstall(device: WireGuardDevice) {
     if (!device.wireguardPeer) return;
     const peer = device.wireguardPeer;
-    setScript(
-      generateWireGuardScript({
-        privateKey: peer.privateKey,
-        publicKey: peer.publicKey,
-        vpnIp: peer.vpnIp,
-        endpoint: peer.endpoint,
-      })
-    );
+    if (!serverPublicKey) {
+      setScript(
+        "# Clé publique serveur manquante sur la plateforme.\n# Sur le VPS : wg show wg0 public-key\n# Puis ajoutez WG_SERVER_PUBLIC_KEY dans /var/www/nanotech-vpn/.env et redémarrez l'app."
+      );
+    } else {
+      setScript(
+        generateWireGuardScript({
+          privateKey: peer.privateKey,
+          serverPublicKey,
+          vpnIp: peer.vpnIp,
+          endpoint: peer.endpoint,
+        })
+      );
+    }
     setScriptOpen(true);
   }
 

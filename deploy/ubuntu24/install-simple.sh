@@ -88,6 +88,13 @@ VPN_PROVISION_PATH=/opt/nanotech-vpn
 
 L2TP_IPSEC_SECRET="${L2TP_IPSEC_SECRET}"
 
+WG_SERVER_PUB=""
+if [[ -f /var/lib/nanotech-vpn/wg-server-public.key ]]; then
+  WG_SERVER_PUB=$(cat /var/lib/nanotech-vpn/wg-server-public.key)
+fi
+WG_SERVER_PUBLIC_KEY=${WG_SERVER_PUB}
+NEXT_PUBLIC_WG_SERVER_PUBLIC_KEY=${WG_SERVER_PUB}
+
 SEED_ADMIN_EMAIL=${ADMIN_EMAIL}
 SEED_ADMIN_PASSWORD=${ADMIN_PASS}
 SEED_DEMO_DEVICES=0
